@@ -2,11 +2,17 @@
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QLineEdit, QPushButton, QFileDialog, QMessageBox
+    QFileDialog, QMessageBox
 )
+
+from service import SpotifyFlatService
 from service.youtube_service import YouTubeService
 from service.spotify_service import SpotifyService
 from service.audio_downloader_service import AudioMetadata
+#from dotenv import load_dotenv
+
+from ui.components.inputs.action_button import ActionButton
+from ui.components.inputs.text_field import TextField
 
 
 class TrakApp(QWidget):
@@ -15,11 +21,14 @@ class TrakApp(QWidget):
     def __init__(self):
         """Initialize the TRAK application."""
         super().__init__()
+        #load_dotenv()
+        self.url_input = None
         self.artist = ""
         self.title = ""
         self.url = ""
         self.youtube_service = YouTubeService()
         self.spotify_service = SpotifyService()
+        self.spotify_flat_service = SpotifyFlatService()
         self.init_ui()
 
     def init_ui(self):
@@ -31,24 +40,18 @@ class TrakApp(QWidget):
 
         # URL input and search button
         input_layout = QHBoxLayout()
-        self.url_input = QLineEdit()
-        self.url_input.setPlaceholderText("Enter Spotify or YouTube URL...")
-        self.url_input.textChanged.connect(self.toggle_search_button)
-        self.search_button = QPushButton("Search")
-        self.search_button.setEnabled(False)
-        self.search_button.clicked.connect(self.search_metadata)
+        self.url_input = TextField("Enter Spotify or YouTube URL...", self.toggle_search_button)
+        self.search_button = ActionButton("Search", self.search_metadata, False)
         input_layout.addWidget(self.url_input)
         input_layout.addWidget(self.search_button)
         layout.addLayout(input_layout)
 
         # Info display
-        self.info_label = QLabel("")
+        self.info_label = QLabel("Metadata")
         layout.addWidget(self.info_label)
 
         # Download button
-        self.download_button = QPushButton("Download")
-        self.download_button.clicked.connect(self.download_file)
-        self.download_button.setEnabled(False)
+        self.download_button = ActionButton("Download", self.download_file, False)
         layout.addWidget(self.download_button)
 
         self.setLayout(layout)
@@ -90,6 +93,7 @@ class TrakApp(QWidget):
             ValueError: If URL is not supported or extraction fails.
         """
         if 'spotify' in self.url:
+            #return self.spotify_flat_service.extract_metadata(self.url)
             return self.spotify_service.extract_metadata(self.url)
         elif 'youtube' in self.url or 'youtu.be' in self.url:
             return self.youtube_service.extract_metadata(self.url)

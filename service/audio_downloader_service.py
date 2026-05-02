@@ -1,13 +1,6 @@
 """Abstract base service for audio downloaders."""
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-
-
-@dataclass
-class AudioMetadata:
-    """Data class representing audio metadata."""
-    artist: str
-    title: str
+from model import AudioMetadata
 
 
 class AudioDownloaderService(ABC):
