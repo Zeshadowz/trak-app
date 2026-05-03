@@ -1,6 +1,6 @@
 """Spotify audio downloader service."""
 import os
-from typing import Optional
+from typing import Callable, Optional
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import yt_dlp
@@ -71,13 +71,19 @@ class SpotifyService(AudioDownloaderService):
         except Exception as e:
             raise ValueError(f"Failed to extract Spotify metadata: {str(e)}")
 
-    def download(self, url: str, output_path: str) -> None:
+    def download(
+        self,
+        url: str,
+        output_path: str,
+        progress_callback: Optional[Callable[[int], None]] = None
+    ) -> None:
         """
         Download audio from Spotify track by searching YouTube.
 
         Args:
             url: The Spotify track URL.
             output_path: The directory path to save the file.
+            progress_callback: Optional callback to report progress (0-100).
 
         Raises:
             Exception: If download fails.
@@ -87,6 +93,19 @@ class SpotifyService(AudioDownloaderService):
 
         if not os.path.isdir(output_path):
             raise ValueError(f"Output path does not exist: {output_path}")
+
+        def progress_hook(info):
+            """Handle progress updates from yt_dlp."""
+            if progress_callback is None:
+                return
+            if info['status'] == 'downloading':
+                total = info.get('total_bytes', 0)
+                downloaded = info.get('downloaded_bytes', 0)
+                if total > 0:
+                    progress = int((downloaded / total) * 100)
+                    progress_callback(min(progress, 99))
+            elif info['status'] == 'finished':
+                progress_callback(100)
 
         try:
             metadata = self.extract_metadata(url)
@@ -102,6 +121,7 @@ class SpotifyService(AudioDownloaderService):
                 'outtmpl': os.path.join(output_path, '%(title)s.%(ext)s'),
                 'quiet': True,
                 'no_warnings': True,
+                'progress_hooks': [progress_hook] if progress_callback else [],
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([search_query])
