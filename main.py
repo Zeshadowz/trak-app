@@ -1,125 +1,84 @@
 """TRAK Application - Spotify and YouTube to MP3 Downloader."""
 import sys
 from typing import List
+
+from PyQt5.QtCore import Qt, QSettings
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QLineEdit, QPushButton, QFileDialog, QMessageBox, QProgressBar,
-    QScrollArea, QFrame, QGridLayout
+    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel,
+    QLineEdit, QPushButton, QFileDialog, QMessageBox, QScrollArea, QToolBar, QAction, QDialog,
+    QDialogButtonBox, QWidget
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 from service import SpotifyFlatService
-from service.youtube_service import YouTubeService
-from service.spotify_service import SpotifyService
 from service.audio_downloader_service import AudioMetadata
-from ui.components.feedback.progress.linear_progress import ProgressWorker
-# from dotenv import load_dotenv
-
+from service.spotify_service import SpotifyService
+from service.youtube_service import YouTubeService
 from ui.components.inputs.action_button import ActionButton
 from ui.components.inputs.text_field import TextField
+from ui.widgets.track_widget import TrackWidget
 
 
-class TrackWidget(QFrame):
-    """Widget representing a single track with editable metadata and download."""
+# from dotenv import load_dotenv
 
-    def __init__(self, metadata: AudioMetadata, service, parent=None):
-        """Initialize track widget."""
+
+class SettingsDialog(QDialog):
+    """Dialog for application settings."""
+
+    def __init__(self, parent=None):
+        """Initialize settings dialog."""
         super().__init__(parent)
-        self.metadata = metadata
-        self.service = service
-        self.download_folder = ""
+        self.settings = QSettings("TRAK", "Downloader")
         self.init_ui()
 
     def init_ui(self):
-        """Initialize the track widget UI."""
-        self.setFrameStyle(QFrame.Box)
-        layout = QGridLayout()
+        """Initialize the settings UI."""
+        self.setWindowTitle("Settings")
+        self.setGeometry(400, 400, 400, 200)
 
-        # Artist label and input
-        layout.addWidget(QLabel("Artist:"), 0, 0)
-        self.artist_input = QLineEdit(self.metadata.artist)
-        layout.addWidget(self.artist_input, 0, 1)
+        layout = QVBoxLayout()
 
-        # Title label and input
-        layout.addWidget(QLabel("Title:"), 1, 0)
-        self.title_input = QLineEdit(self.metadata.title)
-        layout.addWidget(self.title_input, 1, 1)
+        # Default download path
+        path_layout = QHBoxLayout()
+        path_layout.addWidget(QLabel("Default Download Path:"))
+        self.path_input = QLineEdit()
+        self.path_input.setText(self.settings.value("default_download_path", ""))
+        path_layout.addWidget(self.path_input)
+        self.browse_button = QPushButton("Browse")
+        self.browse_button.clicked.connect(self.browse_path)
+        path_layout.addWidget(self.browse_button)
+        layout.addLayout(path_layout)
 
-        # Download button
-        self.download_button = QPushButton("Download")
-        self.download_button.clicked.connect(self.download_track)
-        layout.addWidget(self.download_button, 0, 2, 2, 1)
-
-        # Progress bar (initially hidden)
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setMinimum(0)
-        self.progress_bar.setMaximum(100)
-        self.progress_bar.setValue(0)
-        self.progress_bar.setVisible(False)
-        self.progress_bar.setStyleSheet(
-            "QProgressBar { border: 1px solid grey; "
-            "min-height: 12px; max-height: 12px; "
-            "border-radius: 5px; text-align: center; }"
+        # Buttons
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
+            Qt.Horizontal, self
         )
-        layout.addWidget(self.progress_bar, 2, 0, 1, 3)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
 
         self.setLayout(layout)
 
-    def download_track(self):
-        """Download the track."""
-        if not self.download_folder:
-            self.download_folder = QFileDialog.getExistingDirectory(
-                self, "Choose Download Folder"
-            )
-            if not self.download_folder:
-                return
+    def browse_path(self):
+        """Browse for download path."""
+        path = QFileDialog.getExistingDirectory(self, "Choose Default Download Folder")
+        if path:
+            self.path_input.setText(path)
 
-        # Disable button and show progress
-        self.download_button.setEnabled(False)
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setValue(0)
+    def accept(self):
+        """Save settings on accept."""
+        self.settings.setValue("default_download_path", self.path_input.text())
+        super().accept()
 
-        # Create worker
-        self.worker = ProgressWorker(
-            self.service,
-            self.metadata.url,
-            self.download_folder,
-            'spotify' in self.metadata.url
-        )
-        self.worker.progress_updated.connect(self._on_progress)
-        self.worker.download_finished.connect(self._on_finished)
-        self.worker.download_failed.connect(self._on_failed)
-        self.worker.start()
-
-    def _on_progress(self, progress: int):
-        """Update progress bar."""
-        self.progress_bar.setValue(progress)
-
-    def _on_finished(self):
-        """Handle download completion."""
-        self.progress_bar.setValue(100)
-        QMessageBox.information(self, "Success", "Download completed!")
-        self._reset()
-
-    def _on_failed(self, error: str):
-        """Handle download failure."""
-        QMessageBox.critical(self, "Error", f"Download failed: {error}")
-        self._reset()
-
-    def _reset(self):
-        """Reset UI after download."""
-        self.progress_bar.setVisible(False)
-        self.progress_bar.setValue(0)
-        self.download_button.setEnabled(True)
-
-
-class TrakApp(QWidget):
+class TrakApp(QMainWindow):
     """Main application window for TRAK audio downloader."""
 
     def __init__(self):
         """Initialize the TRAK application."""
         super().__init__()
         # load_dotenv()
+        self.settings = QSettings("TRAK", "Downloader")
+        self.default_download_path = self.settings.value("default_download_path", "")
         self.url_input = None
         self.url = ""
         self.youtube_service = YouTubeService()
@@ -133,7 +92,26 @@ class TrakApp(QWidget):
         self.setWindowTitle("TRAK")
         self.setGeometry(300, 300, 800, 600)
 
-        layout = QVBoxLayout()
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
+
+        layout = QVBoxLayout(central_widget)
+
+        # Toolbar
+        self.toolbar = QToolBar()
+        self.addToolBar(Qt.TopToolBarArea, self.toolbar)
+
+        # Menu action (placeholder)
+        menu_action = QAction("Menu", self)
+        self.toolbar.addAction(menu_action)
+
+        # Spacer
+        self.toolbar.addSeparator()
+
+        # Settings action
+        settings_action = QAction("Settings", self)
+        settings_action.triggered.connect(self.open_settings)
+        self.toolbar.addAction(settings_action)
 
         # URL input and search button
         input_layout = QHBoxLayout()
@@ -157,8 +135,6 @@ class TrakApp(QWidget):
         self.scroll_layout = QVBoxLayout(self.scroll_widget)
         self.scroll_area.setWidget(self.scroll_widget)
         layout.addWidget(self.scroll_area)
-
-        self.setLayout(layout)
 
     def toggle_search_button(self):
         """Enable/disable search button based on URL input."""
@@ -209,9 +185,18 @@ class TrakApp(QWidget):
 
         # Add new tracks
         for metadata in metadata_list:
-            track_widget = TrackWidget(metadata, service)
+            track_widget = TrackWidget(metadata, service, self.default_download_path)
             self.scroll_layout.addWidget(track_widget)
             self.track_widgets.append(track_widget)
+
+    def open_settings(self):
+        """Open settings dialog."""
+        dialog = SettingsDialog(self)
+        if dialog.exec_():
+            self.default_download_path = self.settings.value("default_download_path", "")
+            # Update existing widgets
+            for widget in self.track_widgets:
+                widget.default_path = self.default_download_path
 
 
 if __name__ == "__main__":
