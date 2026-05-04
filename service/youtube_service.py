@@ -1,6 +1,6 @@
 """YouTube audio downloader service."""
 import os
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 import yt_dlp
 from .audio_downloader_service import AudioDownloaderService, AudioMetadata
 
@@ -8,15 +8,15 @@ from .audio_downloader_service import AudioDownloaderService, AudioMetadata
 class YouTubeService(AudioDownloaderService):
     """Service for downloading audio from YouTube."""
 
-    def extract_metadata(self, url: str) -> AudioMetadata:
+    def extract_metadata(self, url: str) -> List[AudioMetadata]:
         """
         Extract metadata from a YouTube URL.
 
         Args:
-            url: The YouTube URL.
+            url: The YouTube URL (single video or playlist).
 
         Returns:
-            AudioMetadata containing artist (uploader) and title.
+            List of AudioMetadata containing artist, title, and url for each track.
 
         Raises:
             ValueError: If the URL is invalid or extraction fails.
@@ -25,12 +25,24 @@ class YouTubeService(AudioDownloaderService):
             raise ValueError("Invalid YouTube URL")
 
         try:
-            ydl_opts = {'quiet': True, 'no_warnings': True}
+            ydl_opts = {'quiet': True, 'no_warnings': True, 'extract_flat': False}
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
-                artist = info.get('artist', info.get('uploader', 'Unknown'))
-                title = info.get('title', 'Unknown')
-                return AudioMetadata(artist=artist, title=title)
+                if 'entries' in info:
+                    # It's a playlist
+                    metadata_list = []
+                    for entry in info['entries']:
+                        if entry:
+                            artist = entry.get('artist', entry.get('uploader', 'Unknown'))
+                            title = entry.get('title', 'Unknown')
+                            video_url = f"https://www.youtube.com/watch?v={entry['id']}"
+                            metadata_list.append(AudioMetadata(artist=artist, title=title, url=video_url))
+                    return metadata_list
+                else:
+                    # Single video
+                    artist = info.get('artist', info.get('uploader', 'Unknown'))
+                    title = info.get('title', 'Unknown')
+                    return [AudioMetadata(artist=artist, title=title, url=url)]
         except Exception as e:
             raise ValueError(f"Failed to extract YouTube metadata: {str(e)}")
 

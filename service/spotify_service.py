@@ -1,6 +1,6 @@
 """Spotify audio downloader service."""
 import os
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import yt_dlp
@@ -41,33 +41,47 @@ class SpotifyService(AudioDownloaderService):
         except Exception as e:
             raise ValueError(f"Failed to initialize Spotify client: {str(e)}")
 
-    def extract_metadata(self, url: str) -> AudioMetadata:
+    def extract_metadata(self, url: str) -> List[AudioMetadata]:
         """
-        Extract metadata from a Spotify track URL.
+        Extract metadata from a Spotify URL (track or playlist).
 
         Args:
-            url: The Spotify track URL.
+            url: The Spotify URL.
 
         Returns:
-            AudioMetadata containing artist and title.
+            List of AudioMetadata containing artist, title, and url for each track.
 
         Raises:
             ValueError: If the URL is invalid or extraction fails.
         """
         if not self._is_valid_spotify_url(url):
-            raise ValueError("Invalid Spotify URL or not a track URL")
+            raise ValueError("Invalid Spotify URL")
 
         try:
             self._init_spotify_client()
-            track_id = self._extract_track_id(url)
-
-            if not track_id:
-                raise ValueError("Could not extract track ID from URL")
-
-            track = self.spotify_client.track(track_id)
-            artist = ', '.join([a['name'] for a in track['artists']])
-            title = track['name']
-            return AudioMetadata(artist=artist, title=title)
+            if 'track' in url:
+                track_id = self._extract_track_id(url)
+                if not track_id:
+                    raise ValueError("Could not extract track ID from URL")
+                track = self.spotify_client.track(track_id)
+                artist = ', '.join([a['name'] for a in track['artists']])
+                title = track['name']
+                return [AudioMetadata(artist=artist, title=title, url=url)]
+            elif 'playlist' in url:
+                playlist_id = self._extract_playlist_id(url)
+                if not playlist_id:
+                    raise ValueError("Could not extract playlist ID from URL")
+                results = self.spotify_client.playlist_tracks(playlist_id)
+                metadata_list = []
+                for item in results['items']:
+                    track = item['track']
+                    artist = ', '.join([a['name'] for a in track['artists']])
+                    title = track['name']
+                    track_url = track['external_urls']['spotify']
+                    metadata_list.append(AudioMetadata(artist=artist, title=title, url=track_url))
+                return metadata_list
+            else:
+                raise ValueError("Unsupported Spotify URL type")
         except Exception as e:
             raise ValueError(f"Failed to extract Spotify metadata: {str(e)}")
 
@@ -108,7 +122,10 @@ class SpotifyService(AudioDownloaderService):
                 progress_callback(100)
 
         try:
-            metadata = self.extract_metadata(url)
+            metadata_list = self.extract_metadata(url)
+            if not metadata_list:
+                raise ValueError("No metadata found")
+            metadata = metadata_list[0]  # For single track
             search_query = f"ytsearch:{metadata.artist} {metadata.title}"
 
             ydl_opts = {
@@ -139,7 +156,7 @@ class SpotifyService(AudioDownloaderService):
         Returns:
             True if it's a Spotify track URL, False otherwise.
         """
-        return 'spotify' in url and 'track' in url
+        return 'spotify' in url and ('track' in url or 'playlist' in url)
 
     @staticmethod
     def _extract_track_id(url: str) -> Optional[str]:
@@ -159,3 +176,20 @@ class SpotifyService(AudioDownloaderService):
         except Exception:
             return None
 
+    @staticmethod
+    def _extract_playlist_id(url: str) -> Optional[str]:
+        """
+        Extract playlist ID from Spotify URL.
+
+        Args:
+            url: The Spotify URL.
+
+        Returns:
+            The playlist ID or None if extraction fails.
+        """
+        try:
+            # Spotify URL format: https://open.spotify.com/playlist/PLAYLIST_ID?...
+            playlist_id = url.split('/playlist/')[-1].split('?')[0]
+            return playlist_id if playlist_id else None
+        except Exception:
+            return None
