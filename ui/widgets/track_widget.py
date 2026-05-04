@@ -1,5 +1,5 @@
-from PyQt5.QtCore import QSettings
-from PyQt5.QtWidgets import QFrame, QGridLayout, QLabel, QLineEdit, QPushButton, QProgressBar, QFileDialog, QMessageBox
+from PyQt6.QtCore import QSettings
+from PyQt6.QtWidgets import QFrame, QGridLayout, QLabel, QLineEdit, QPushButton, QProgressBar, QFileDialog, QMessageBox
 
 from model import AudioMetadata
 from ui.components.feedback.progress.linear_progress import ProgressWorker
@@ -19,7 +19,8 @@ class TrackWidget(QFrame):
 
     def init_ui(self):
         """Initialize the track widget UI."""
-        self.setFrameStyle(QFrame.Box)
+        self.setFrameStyle(QFrame.Shape.Box)
+        self.setFixedHeight(95)
         layout = QGridLayout()
 
         # Artist label and input

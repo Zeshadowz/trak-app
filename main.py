@@ -2,10 +2,11 @@
 import sys
 from typing import List
 
-from PyQt5.QtCore import Qt, QSettings
-from PyQt5.QtWidgets import (
+from PyQt6.QtCore import Qt, QSettings
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel,
-    QLineEdit, QPushButton, QFileDialog, QMessageBox, QScrollArea, QToolBar, QAction, QDialog,
+    QLineEdit, QPushButton, QFileDialog, QMessageBox, QScrollArea, QToolBar, QDialog,
     QDialogButtonBox, QWidget
 )
 
@@ -50,8 +51,8 @@ class SettingsDialog(QDialog):
 
         # Buttons
         buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
-            Qt.Horizontal, self
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
+            Qt.Orientation.Horizontal, self
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -99,7 +100,7 @@ class TrakApp(QMainWindow):
 
         # Toolbar
         self.toolbar = QToolBar()
-        self.addToolBar(Qt.TopToolBarArea, self.toolbar)
+        self.addToolBar(self.toolbar)
 
         # Menu action (placeholder)
         menu_action = QAction("Menu", self)
@@ -130,9 +131,11 @@ class TrakApp(QMainWindow):
 
         # Scrollable area for tracks
         self.scroll_area = QScrollArea()
+
         self.scroll_area.setWidgetResizable(True)
         self.scroll_widget = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_widget)
+        self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_area.setWidget(self.scroll_widget)
         layout.addWidget(self.scroll_area)
 
@@ -192,7 +195,7 @@ class TrakApp(QMainWindow):
     def open_settings(self):
         """Open settings dialog."""
         dialog = SettingsDialog(self)
-        if dialog.exec_():
+        if dialog.exec():
             self.default_download_path = self.settings.value("default_download_path", "")
             # Update existing widgets
             for widget in self.track_widgets:
@@ -203,4 +206,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = TrakApp()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

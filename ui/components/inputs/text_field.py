@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from PyQt5.QtWidgets import QLineEdit
+from PyQt6.QtWidgets import QLineEdit
 
 
 class TextField(QLineEdit):
