@@ -43,3 +43,23 @@ class AudioDownloaderService(ABC):
         """
         pass
 
+    @abstractmethod
+    def download(
+        self,
+        data: AudioMetadata,
+        output_path: str,
+        progress_callback: Optional[Callable[[int], None]] = None
+    ) -> None:
+        """
+        Download audio from the given URL to the output path as MP3.
+
+        Args:
+            url: The URL to download from.
+            output_path: The directory path to save the file.
+            progress_callback: Optional callback to report progress (0-100).
+
+        Raises:
+            Exception: If download fails.
+        """
+        pass
+

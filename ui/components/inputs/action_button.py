@@ -31,8 +31,8 @@ class ActionButton(QPushButton):
                 font-size: 14px;
             }
             QPushButton:disabled {
-                background-color: rgba(0, 0, 0, 0);
-                color: rgba(0, 0, 0, 0);
+                background-color: rgba(0, 0, 0, 0.12);
+                color: rgba(0, 0, 0, 0.3);
             }
             QPushButton:hover {
                 background-color: #0055FF;

@@ -71,17 +71,37 @@ class SpotifyService(AudioDownloaderService):
                 playlist_id = self._extract_playlist_id(url)
                 if not playlist_id:
                     raise ValueError("Could not extract playlist ID from URL")
-                results = self.spotify_client.playlist_tracks(playlist_id)
+
+                try:
+                    results = self.spotify_client.playlist_items(playlist_id)
+                except Exception as playlist_error:
+                    # Check if it's an authentication issue
+                    error_msg = str(playlist_error).lower()
+                    if '401' in error_msg or 'authentication' in error_msg or 'unauthorized' in error_msg:
+                        raise ValueError(
+                            "Unable to access playlist. This may be because:\n"
+                            "1. The playlist is private\n"
+                            "2. Spotify API credentials are invalid\n"
+                            "3. Spotify requires user authentication for this playlist\n\n"
+                            "Try using individual track URLs instead, or check your Spotify API credentials."
+                        )
+                    else:
+                        raise ValueError(f"Failed to access playlist: {str(playlist_error)}")
+
                 metadata_list = []
                 for item in results['items']:
                     track = item['track']
-                    artist = ', '.join([a['name'] for a in track['artists']])
-                    title = track['name']
-                    track_url = track['external_urls']['spotify']
-                    metadata_list.append(AudioMetadata(artist=artist, title=title, url=track_url))
+                    if track:  # Skip None tracks (can happen with local tracks)
+                        artist = ', '.join([a['name'] for a in track['artists']])
+                        title = track['name']
+                        track_url = track['external_urls']['spotify']
+                        metadata_list.append(AudioMetadata(artist=artist, title=title, url=track_url))
                 return metadata_list
             else:
                 raise ValueError("Unsupported Spotify URL type")
+        except ValueError:
+            # Re-raise ValueError as-is
+            raise
         except Exception as e:
             raise ValueError(f"Failed to extract Spotify metadata: {str(e)}")
 
@@ -135,7 +155,70 @@ class SpotifyService(AudioDownloaderService):
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }],
-                'outtmpl': os.path.join(output_path, '%(title)s.%(ext)s'),
+                'outtmpl': os.path.join(output_path, '%(uploader)s - %(title)s.%(ext)s'),
+                'quiet': True,
+                'no_warnings': True,
+                'progress_hooks': [progress_hook] if progress_callback else [],
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([search_query])
+        except Exception as e:
+            raise Exception(f"Spotify download failed: {str(e)}")
+
+    def download(
+        self,
+        data: AudioMetadata,
+        output_path: str,
+        progress_callback: Optional[Callable[[int], None]] = None
+    ) -> None:
+        """
+        Download audio from Spotify track by searching YouTube.
+
+        Args:
+            data: The Spotify track URL.
+            output_path: The directory path to save the file.
+            progress_callback: Optional callback to report progress (0-100).
+
+        Raises:
+            Exception: If download fails.
+            :param data:
+        """
+        if not self._is_valid_spotify_url(data.url):
+            raise ValueError("Invalid Spotify URL")
+
+        if not os.path.isdir(output_path):
+            raise ValueError(f"Output path does not exist: {output_path}")
+
+        def progress_hook(info):
+            """Handle progress updates from yt_dlp."""
+            if progress_callback is None:
+                return
+            if info['status'] == 'downloading':
+                total = info.get('total_bytes', 0)
+                downloaded = info.get('downloaded_bytes', 0)
+                if total > 0:
+                    progress = int((downloaded / total) * 100)
+                    progress_callback(min(progress, 99))
+            elif info['status'] == 'finished':
+                progress_callback(100)
+
+        try:
+            metadata_list = self.extract_metadata(data.url)
+            if not metadata_list:
+                raise ValueError("No metadata found")
+            metadata = metadata_list[0]  # For single track
+            search_query = f"ytsearch:{metadata.artist} {metadata.title}"
+
+            filename = f"{data.artist} - {data.title}"
+
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'outtmpl': os.path.join(output_path, filename + '.%(ext)s'),
                 'quiet': True,
                 'no_warnings': True,
                 'progress_hooks': [progress_hook] if progress_callback else [],

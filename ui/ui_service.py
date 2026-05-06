@@ -1,3 +1,4 @@
+from model import AudioMetadata
 from ui.components.feedback.progress.linear_progress import ProgressWorker
 
 
@@ -15,7 +16,7 @@ class UiService:
     def create_progress_worker(
             self,
             service,
-            url: str,
+            metadata: AudioMetadata,
             output_path: str,
             is_spotify: bool
     ) -> ProgressWorker:
@@ -24,7 +25,7 @@ class UiService:
 
         Args:
             service: The audio downloader service to use.
-            url: The URL to download from.
+            metadata: The metadata to use.
             output_path: The path to save the file.
             is_spotify: Whether the URL is a Spotify link.
 
@@ -33,7 +34,7 @@ class UiService:
         """
         self._progress_worker = ProgressWorker(
             service,
-            url,
+            metadata,
             output_path,
             is_spotify
         )

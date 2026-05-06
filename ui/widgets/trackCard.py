@@ -5,12 +5,14 @@ from model import AudioMetadata
 from ui.components.feedback.progress.linear_progress import ProgressWorker
 
 
-class TrackWidget(QFrame):
+class TrackCard(QFrame):
     """Widget representing a single track with editable metadata and download."""
 
     def __init__(self, metadata: AudioMetadata, service, default_path: str = "", parent=None):
         """Initialize track widget."""
         super().__init__(parent)
+        self.artist_input = None
+        self.title_input = None
         self.metadata = metadata
         self.service = service
         self.default_path = default_path
@@ -67,6 +69,10 @@ class TrackWidget(QFrame):
             settings = QSettings("TRAK", "Downloader")
             settings.setValue("default_download_path", self.download_folder)
 
+        # Laod data
+        self.metadata.artist = self.artist_input.text()
+        self.metadata.title = self.title_input.text()
+
         # Disable button and show progress
         self.download_button.setEnabled(False)
         self.progress_bar.setVisible(True)
@@ -75,7 +81,7 @@ class TrackWidget(QFrame):
         # Create worker
         self.worker = ProgressWorker(
             self.service,
-            self.metadata.url,
+            self.metadata,
             self.download_folder,
             'spotify' in self.metadata.url
         )
