@@ -26,7 +26,7 @@ class AudioDownloaderService(ABC):
     @abstractmethod
     def download(
         self,
-        url: str,
+        data: AudioMetadata,
         output_path: str,
         progress_callback: Optional[Callable[[int], None]] = None
     ) -> None:

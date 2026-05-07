@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QLineEdit, QPushButton, QFileDialog, QMessageBox, QScrollArea, QToolBar, QDialog,
     QDialogButtonBox, QWidget
 )
+from dotenv import load_dotenv
 
 from service import SpotifyFlatService
 from service.audio_downloader_service import AudioMetadata
@@ -16,60 +17,12 @@ from service.spotify_service import SpotifyService
 from service.youtube_service import YouTubeService
 from ui.components.inputs.action_button import ActionButton
 from ui.components.inputs.text_field import TextField
-from ui.widgets.track_widget import TrackWidget
+from ui.dialog.modal import SettingsDialog
+from ui.widgets.trackCard import TrackCard
 
 
 # from dotenv import load_dotenv
-
-
-class SettingsDialog(QDialog):
-    """Dialog for application settings."""
-
-    def __init__(self, parent=None):
-        """Initialize settings dialog."""
-        super().__init__(parent)
-        self.settings = QSettings("TRAK", "Downloader")
-        self.init_ui()
-
-    def init_ui(self):
-        """Initialize the settings UI."""
-        self.setWindowTitle("Settings")
-        self.setGeometry(400, 400, 400, 200)
-
-        layout = QVBoxLayout()
-
-        # Default download path
-        path_layout = QHBoxLayout()
-        path_layout.addWidget(QLabel("Default Download Path:"))
-        self.path_input = QLineEdit()
-        self.path_input.setText(self.settings.value("default_download_path", ""))
-        path_layout.addWidget(self.path_input)
-        self.browse_button = QPushButton("Browse")
-        self.browse_button.clicked.connect(self.browse_path)
-        path_layout.addWidget(self.browse_button)
-        layout.addLayout(path_layout)
-
-        # Buttons
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
-            Qt.Orientation.Horizontal, self
-        )
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-
-        self.setLayout(layout)
-
-    def browse_path(self):
-        """Browse for download path."""
-        path = QFileDialog.getExistingDirectory(self, "Choose Default Download Folder")
-        if path:
-            self.path_input.setText(path)
-
-    def accept(self):
-        """Save settings on accept."""
-        self.settings.setValue("default_download_path", self.path_input.text())
-        super().accept()
+#https://open.spotify.com/track/1uXbwHHfgsXcUKfSZw5ZJ0?si=7752920370c6440e
 
 class TrakApp(QMainWindow):
     """Main application window for TRAK audio downloader."""
@@ -77,7 +30,7 @@ class TrakApp(QMainWindow):
     def __init__(self):
         """Initialize the TRAK application."""
         super().__init__()
-        # load_dotenv()
+        load_dotenv()
         self.settings = QSettings("TRAK", "Downloader")
         self.default_download_path = self.settings.value("default_download_path", "")
         self.url_input = None
@@ -188,7 +141,7 @@ class TrakApp(QMainWindow):
 
         # Add new tracks
         for metadata in metadata_list:
-            track_widget = TrackWidget(metadata, service, self.default_download_path)
+            track_widget = TrackCard(metadata, service, self.default_download_path)
             self.scroll_layout.addWidget(track_widget)
             self.track_widgets.append(track_widget)
 

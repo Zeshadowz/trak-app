@@ -1,5 +1,6 @@
 from PyQt6.QtCore import QThread, pyqtSignal
 
+from model import AudioMetadata
 from service.audio_downloader_service import AudioDownloaderService
 
 
@@ -13,7 +14,7 @@ class ProgressWorker(QThread):
     def __init__(
             self,
             service: AudioDownloaderService,
-            url: str,
+            metadata: AudioMetadata,
             output_path: str,
             is_spotify: bool
     ):
@@ -22,13 +23,13 @@ class ProgressWorker(QThread):
 
         Args:
             service: The progress of the service
-            url: The url to download from.
+            metadata: The metadata of the audio file.
             output_path: The path to save the progress.
             is_spotify: Whether the progress is a spotify progress.
         """
         super().__init__()
         self.service = service
-        self.url = url
+        self.metadata = metadata
         self.output_path = output_path
         self.is_spotify = is_spotify
 
@@ -37,7 +38,7 @@ class ProgressWorker(QThread):
 
         try:
             self.service.download(
-                self.url,
+                self.metadata,
                 self.output_path,
                 progress_callback=self._on_progress
             )
