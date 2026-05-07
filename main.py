@@ -22,6 +22,7 @@ from ui.widgets.trackCard import TrackCard
 
 
 # from dotenv import load_dotenv
+#https://open.spotify.com/track/1uXbwHHfgsXcUKfSZw5ZJ0?si=7752920370c6440e
 
 class TrakApp(QMainWindow):
     """Main application window for TRAK audio downloader."""

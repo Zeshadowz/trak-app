@@ -107,9 +107,10 @@ class SpotifyService(AudioDownloaderService):
 
     def download(
         self,
-        url: str,
+        url,
         output_path: str,
-        progress_callback: Optional[Callable[[int], None]] = None
+        progress_callback: Optional[Callable[[int], None]] = None,
+        status_callback: Optional[Callable[[str], None]] = None
     ) -> None:
         """
         Download audio from Spotify track by searching YouTube.
@@ -118,6 +119,7 @@ class SpotifyService(AudioDownloaderService):
             url: The Spotify track URL.
             output_path: The directory path to save the file.
             progress_callback: Optional callback to report progress (0-100).
+            status_callback: Optional callback to report status messages.
 
         Raises:
             Exception: If download fails.
@@ -175,7 +177,7 @@ class SpotifyService(AudioDownloaderService):
         Download audio from Spotify track by searching YouTube.
 
         Args:
-            data: The Spotify track URL.
+            data: AudioMetadata containing the Spotify track URL or string URL
             output_path: The directory path to save the file.
             progress_callback: Optional callback to report progress (0-100).
 

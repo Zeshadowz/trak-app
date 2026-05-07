@@ -45,12 +45,21 @@ class TrackCard(QFrame):
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(0)
-        self.progress_bar.setVisible(False)
-        self.progress_bar.setStyleSheet(
-            "QProgressBar { border: 1px solid grey; "
-            "min-height: 12px; max-height: 12px; "
-            "border-radius: 5px; text-align: center; }"
-        )
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar { 
+                border: 0px;
+                border-radius: 5px;
+                background-color: #e0e0e0;
+                min-height: 12px; 
+                max-height: 12px;
+                text-align: center;
+             } 
+             QProgressBar::chunk {
+                width: 12px;
+                background: #05b8cc;
+             }  
+        """)
         layout.addWidget(self.progress_bar, 2, 0, 1, 3)
 
         self.setLayout(layout)
