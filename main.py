@@ -5,9 +5,7 @@ from typing import List
 from PyQt6.QtCore import Qt, QSettings
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel,
-    QLineEdit, QPushButton, QFileDialog, QMessageBox, QScrollArea, QToolBar, QDialog,
-    QDialogButtonBox, QWidget
+    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QMessageBox, QScrollArea, QToolBar, QWidget
 )
 from dotenv import load_dotenv
 
@@ -22,7 +20,7 @@ from ui.widgets.trackCard import TrackCard
 
 
 # from dotenv import load_dotenv
-#https://open.spotify.com/track/1uXbwHHfgsXcUKfSZw5ZJ0?si=7752920370c6440e
+# https://open.spotify.com/track/1uXbwHHfgsXcUKfSZw5ZJ0?si=7752920370c6440e
 
 class TrakApp(QMainWindow):
     """Main application window for TRAK audio downloader."""
@@ -157,6 +155,8 @@ class TrakApp(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    with open("ui/styles/app.qss", "r", encoding="utf8") as f:
+        app.setStyleSheet(f.read())
     window = TrakApp()
     window.show()
     sys.exit(app.exec())

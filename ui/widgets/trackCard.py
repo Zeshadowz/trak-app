@@ -2,7 +2,7 @@ from PyQt6.QtCore import QSettings
 from PyQt6.QtWidgets import QFrame, QGridLayout, QLabel, QLineEdit, QPushButton, QProgressBar, QFileDialog, QMessageBox
 
 from model import AudioMetadata
-from ui.components.feedback.progress.linear_progress import ProgressWorker
+from ui.components.feedback.progress.progressWorker import ProgressWorker
 
 
 class TrackCard(QFrame):
@@ -11,6 +11,9 @@ class TrackCard(QFrame):
     def __init__(self, metadata: AudioMetadata, service, default_path: str = "", parent=None):
         """Initialize track widget."""
         super().__init__(parent)
+        self.worker = None
+        self.progress_bar = None
+        self.download_button = None
         self.artist_input = None
         self.title_input = None
         self.metadata = metadata
@@ -46,20 +49,7 @@ class TrackCard(QFrame):
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
-        self.progress_bar.setStyleSheet("""
-            QProgressBar { 
-                border: 0px;
-                border-radius: 5px;
-                background-color: #e0e0e0;
-                min-height: 12px; 
-                max-height: 12px;
-                text-align: center;
-             } 
-             QProgressBar::chunk {
-                width: 12px;
-                background: #05b8cc;
-             }  
-        """)
+        
         layout.addWidget(self.progress_bar, 2, 0, 1, 3)
 
         self.setLayout(layout)
@@ -78,7 +68,7 @@ class TrackCard(QFrame):
             settings = QSettings("TRAK", "Downloader")
             settings.setValue("default_download_path", self.download_folder)
 
-        # Laod data
+        # Load data
         self.metadata.artist = self.artist_input.text()
         self.metadata.title = self.title_input.text()
 

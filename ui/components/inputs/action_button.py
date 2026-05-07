@@ -21,27 +21,6 @@ class ActionButton(QPushButton):
             self.clicked.connect(on_click)
         self.setEnabled(enabled)
 
-        self.setStyleSheet("""
-            QPushButton {
-                background-color: #007BFF;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 8px 16px;
-                font-size: 14px;
-            }
-            QPushButton:disabled {
-                background-color: rgba(0, 0, 0, 0.12);
-                color: rgba(0, 0, 0, 0.3);
-            }
-            QPushButton:hover {
-                background-color: #0055FF;
-            }
-            QPushButton:pressed {
-                border: 2px solid #0056b3;
-            }
-        """)
-
     def enable(self):
         """Enable the button."""
         self.setEnabled(True)
