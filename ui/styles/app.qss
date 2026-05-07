@@ -7,8 +7,11 @@
 }
 
 /* Base styling */
+QMainWindow{
+	background-color: #EAEAEA;
+	font-size: 12px;
+}
 QWidget {
-    background-color: #f0f0f0;
     color: #333333;
 }
 
@@ -16,7 +19,6 @@ QLineEdit{
 	border: 1px solid #CCC;
 	border-radius: 4px;
 	padding: 8px;
-	font-size: 14px;
 }
 QLineEdit::focus{
 	border-color: #007BFF
@@ -53,6 +55,14 @@ QPushButton:hover {
 }
 QPushButton:pressed {
 	border: 2px solid #0056b3;
+}
+
+QScrollArea{
+	border: 0px;
+}
+
+TrackCard{
+	border-top: 1px solid #0056b3;
 }
 
 /* Add your QSS styles here */

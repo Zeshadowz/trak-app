@@ -48,8 +48,8 @@ class TrackCard(QFrame):
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(0)
-        self.progress_bar.setVisible(True)
-        
+        self.progress_bar.setVisible(False)
+
         layout.addWidget(self.progress_bar, 2, 0, 1, 3)
 
         self.setLayout(layout)
