@@ -7,14 +7,15 @@
 }
 
 /* Base styling */
-QMainWindow{
-	background-color: #EAEAEA;
+QMainWindow#AppWindows{
+	background-color: ${bg_app};
 	font-size: 12px;
 }
+
 QWidget {
     color: #333333;
 }
-
+/*
 QLineEdit{
 	border: 1px solid #CCC;
 	border-radius: 4px;
@@ -22,7 +23,7 @@ QLineEdit{
 }
 QLineEdit::focus{
 	border-color: #007BFF
-}
+}*/
 
 QProgressBar {
     border: 0px;

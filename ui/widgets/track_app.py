@@ -9,15 +9,19 @@ from service import YouTubeService, SpotifyService
 from ui.components.inputs.action_button import ActionButton
 from ui.components.inputs.text_field import TextField
 from ui.dialog.modal import SettingsDialog
+from ui.theme_manager import ThemeManager
 from ui.widgets.trackCard import TrackCard
 
 
 class TrakApp(QMainWindow):
     """Main application window for TRAK audio downloader."""
 
-    def __init__(self):
+    def __init__(self, theme_manager: ThemeManager) -> None:
+
         """Initialize the TRAK application."""
         super().__init__()
+        self._theme_manager = theme_manager
+
         self.settings = QSettings("TRAK", "Downloader")
         self.default_download_path = self.settings.value("default_download_path", "")
         self.url_input = None
@@ -28,8 +32,11 @@ class TrakApp(QMainWindow):
         self.track_widgets = []
         self.init_ui()
 
+
+
     def init_ui(self):
         """Initialize the user interface."""
+        self.setObjectName("AppWindows")
         self.setWindowTitle("TRAK")
         self.setGeometry(300, 300, 800, 600)
 
