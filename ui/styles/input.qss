@@ -1,0 +1,27 @@
+/*
+ * input - Qt Style Sheet
+ * Created: 5/8/26
+ */
+
+/* -- Base styling -- */
+QLineEdit{
+	border: 1px solid ${bg_input_border};
+	border-radius: 4px;
+	padding: 8px;
+}
+
+/* Hover */
+QLineEdit::hover{
+	border-color: ${text_secondary};
+}
+
+/* -- Focus -- */
+QLineEdit::focus{
+	border-color: ${bg_input_focus_border};
+}
+
+QLineEdit::disabled{
+	background-color: ${bg_input};
+	color: ${text_placeholder};
+	border-color: ${bg_input_border};
+}
