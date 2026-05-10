@@ -39,7 +39,7 @@ class TrackCard(QFrame):
         layout.addWidget(self.title_input, 1, 1)
 
         # Download button
-        self.download_button = QPushButton("Download")
+        self.download_button = QPushButton("👁 Download")
         self.download_button.clicked.connect(self.download_track)
         layout.addWidget(self.download_button, 0, 2, 2, 1)
 
