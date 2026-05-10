@@ -2,12 +2,11 @@ from typing import List
 
 from PyQt6.QtCore import QSettings, Qt
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QToolBar, QHBoxLayout, QScrollArea, QMessageBox
+from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QToolBar, QScrollArea, QMessageBox
 
 from model import AudioMetadata
 from service import YouTubeService, SpotifyService
-from ui.components.inputs.action_button import ActionButton
-from ui.components.inputs.text_field import TextField
+from ui.components.inputs.search_bar import SearchBar
 from ui.dialog.modal import SettingsDialog
 from ui.theme_manager import ThemeManager
 from ui.widgets.trackCard import TrackCard
@@ -31,8 +30,6 @@ class TrakApp(QMainWindow):
 
         self.track_widgets = []
         self.init_ui()
-
-
 
     def init_ui(self):
         """Initialize the user interface."""
@@ -62,20 +59,10 @@ class TrakApp(QMainWindow):
         self.toolbar.addAction(settings_action)
 
         # URL input and search button
-        searchBar = QHBoxLayout()
-        searchBar.setContentsMargins(20, 0, 20, 0)
-        self.url_input = TextField(
-            "Enter Spotify or YouTube URL...",
-            self.toggle_search_button
-        )
-        self.search_button = ActionButton(
-            "Search",
-            self.search_metadata,
-            False
-        )
-        searchBar.addWidget(self.url_input)
-        searchBar.addWidget(self.search_button)
-        layout.addLayout(searchBar)
+        self.search_bar = SearchBar("Fügen Sie eine URL ein und drücken Sie die Eingabetaste...", self)
+        self.search_bar.search_submitted.connect(self.search_metadata)
+        self.search_bar.setMinimumWidth(400)
+        layout.addWidget(self.search_bar)
 
         # Scrollable area for tracks
         self.scroll_area = QScrollArea()
@@ -87,13 +74,13 @@ class TrakApp(QMainWindow):
         self.scroll_area.setWidget(self.scroll_widget)
         layout.addWidget(self.scroll_area)
 
-    def toggle_search_button(self):
-        """Enable/disable search button based on URL input."""
-        self.search_button.setEnabled(bool(self.url_input.text().strip()))
-
-    def search_metadata(self):
+    def search_metadata(self, url) -> None:
         """Search for metadata using the appropriate service."""
-        self.url = self.url_input.text().strip()
+        if url is not None:
+            self.url = url
+        else:
+            self.url = self.url_input.text().strip()
+
         if not self.url:
             return
 

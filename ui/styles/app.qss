@@ -40,7 +40,7 @@ QProgressBar::chunk {
 }
 
 QPushButton {
-	background-color: #007BFF;
+	/*background-color: #007BFF;*/
     color: white;
     border: none;
     border-radius: 4px;
@@ -56,6 +56,11 @@ QPushButton:hover {
 }
 QPushButton:pressed {
 	border: 2px solid #0056b3;
+}
+
+QPushButton#SearchIcon{
+	background: transparent
+	border: none
 }
 
 QScrollArea{
