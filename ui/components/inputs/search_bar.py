@@ -8,7 +8,12 @@ from ui.utils import get_icon, Separator
 
 class IconMenu(QPushButton):
 
-    def __init__(self, icon: str, active: bool = True, on_click: Callable | None = None, tooltip: str = None,
+    def __init__(self,
+                 icon: str,
+                 active: bool = True,
+                 on_click: Callable | None = None,
+                 tooltip: str = None,
+                 clickable: bool = True,
                  parent=None):
         super().__init__(parent)
 
@@ -16,6 +21,7 @@ class IconMenu(QPushButton):
         self.icon = icon
         self.on_click = on_click
         self.tooltip = tooltip
+        self.clickable = clickable
         self.installEventFilter(self)
         self.setup_ui()
 
@@ -38,14 +44,16 @@ class IconMenu(QPushButton):
             """
         )
 
-    def eventFilter(self, object, event):
-        if event.type() == QEvent.Type.Enter:
-            self.setCursor(Qt.CursorShape.PointingHandCursor)
-            return True
-        elif event.type() == QEvent.Type.Leave:
-            self.setCursor(Qt.CursorShape.ArrowCursor)
-            return True
-        return super().eventFilter(object, event)
+    def eventFilter(self, obj, e):
+        if self.clickable:
+            if e.type() == QEvent.Type.Enter:
+                self.setCursor(Qt.CursorShape.PointingHandCursor)
+                return True
+            elif e.type() == QEvent.Type.Leave:
+                self.setCursor(Qt.CursorShape.ArrowCursor)
+                return True
+            return super().eventFilter(obj, e)
+        return False
 
 
 class SearchBar(QWidget):
@@ -59,7 +67,6 @@ class SearchBar(QWidget):
         self.left_icon = None
         self.text_field = None
         self.search_button = None
-        self.container = None
 
         self.placeholder = placeholder
         self.setup_ui()
@@ -72,9 +79,9 @@ class SearchBar(QWidget):
         layout.setSpacing(12)
 
         # Main container with rounded background
-        self.container = QFrame()
-        self.container.setObjectName("SearchContainer")
-        self.container.setStyleSheet("""
+        container = QFrame()
+        container.setObjectName("SearchContainer")
+        container.setStyleSheet("""
             QFrame#SearchContainer {
                 background: transparent;
                 border: 1px solid #CCC;
@@ -85,12 +92,12 @@ class SearchBar(QWidget):
                 border: 1px solid #F09400;
             }
         """)
-        container_layout = QHBoxLayout(self.container)
+        container_layout = QHBoxLayout(container)
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(2)
 
         # Left Icon (URL icon)
-        self.left_icon = IconMenu("link_40dp_F09400.svg")
+        self.left_icon = IconMenu("link_40dp_F09400.svg", clickable=False)
 
         # Search Input
         self.text_field = QLineEdit()
@@ -115,8 +122,8 @@ class SearchBar(QWidget):
         self.text_field.returnPressed.connect(self._on_return_search)
 
         # Right side actions
-        self.right_widget = QWidget()
-        right_layout = QHBoxLayout(self.right_widget)
+        right_widget = QWidget()
+        right_layout = QHBoxLayout(right_widget)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(6)
 
@@ -133,18 +140,15 @@ class SearchBar(QWidget):
             "search_40dp_F09400.svg", False, self._on_return_search)
         right_layout.addWidget(self.search_button)
 
-        # right_layout.addWidget(self.download_btn)
-
         # Assemble
         container_layout.addWidget(self.left_icon)
         container_layout.addWidget(self.text_field, 1)
-        container_layout.addWidget(self.right_widget)
+        container_layout.addWidget(right_widget)
 
-        layout.addWidget(self.container)
+        layout.addWidget(container)
 
     def _on_return_search(self):
         # Sent the signal with the actual value of the QLineEdit
-        print("on_return_pressed")
         text = self.text_field.text().strip()
         if text:
             print("Url: " + text)
@@ -156,14 +160,8 @@ class SearchBar(QWidget):
     def clear(self) -> None:
         self.text_field.clear()
 
-    def toggle_icon(self, icon: QPushButton):
-        icon.setEnabled(bool(self.text_field.text().strip()))
-
-    def toggle_search_button(self) -> None:
-        """Enable/disable the search button based on the input text."""
-        self.search_button.setEnabled(bool(self.text_field.text().strip()))
-
     def update_button_state(self):
+        """Enable/disable the clean and search button based on the input text."""
         state = bool(self.text_field.text().strip())
         self.search_button.setEnabled(state)
         self.clear_button.setEnabled(state)
